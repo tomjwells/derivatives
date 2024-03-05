@@ -81,3 +81,18 @@ print(
 #     headers=['Option Type', 'Value']
 #   )
 # )
+
+# 3. Calculate Implied Volatility based on the market price of the option
+market_price = call_bsm
+implied_vol = implied_volatility('call', market_price, S_0, K, T, t, r)
+print()
+print(
+  tabulate(
+    [
+      ['Implied Volatility', implied_vol]
+    ],
+    headers=['Metric', 'Value']
+  )
+)
+
+# 3. Estimate the value of a European call option using the Binomial Tree method

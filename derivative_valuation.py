@@ -12,7 +12,7 @@ def black_scholes(option_type: Literal['call', 'put'], S_0: float, K: float,T: d
   """
     Arguments:
       - option_type: call or put
-      - S_0: S_0 = S(t) is the spot price of the underlying asset at time t
+      - S_0: S_0 = S(t=0), the spot price of the underlying asset at time t=0
       - K: K is the strike price
       - T: T is the time to maturity
       - t: t is the current time
@@ -65,28 +65,26 @@ def monte_carlo(option_type: Literal['call', 'put'], S_0: float, K: float,  T: d
     payoff = np.maximum(S_T - K, 0)
   elif option_type == 'put':
     payoff = np.maximum(K - S_T, 0)
-  mean_payoff: float = np.mean(payoff)
+  mean_payoff: np.float64 = np.mean(payoff)
 
   # 3) Discount the average payoff back to time zero.
   discounted_payoff = np.exp(-r * tau) * mean_payoff
   return discounted_payoff
 
+def implied_volatility(option_type: Literal['call', 'put'], market_price: float, S_0: float, K: float, T: datetime, t: datetime, r: float, sigma_initial_guess: float = 0.2, tolerance: float = 1e-6, max_iterations: int = 10000) -> float:
+  sigma = sigma_initial_guess
+  # Newton-Raphson method
+  for _ in range(max_iterations):
+    price = black_scholes(option_type, S_0, K, T, t, r, sigma)
+    diff = price - market_price
+    # print(abs(diff))
+    if abs(diff) < tolerance:
+      return sigma
+    vega = black_scholes_vega(S_0, K, T, t, r, sigma)
+    sigma = sigma - diff/vega
+  raise ValueError(f'Implied volatility not found after {max_iterations} iterations')
 
-def value_derivative(style: Literal['european', 'american', 'user'], \
-                     option_type: Literal['call', 'put'], \
-                     method: Literal['bsm', 'mc'], \
-                     payoff: float, expiry: float, strike: float, spot: float, rate: float, vol: float, div: int =0, steps: int =1000, reps: int =1000, seed: int =1234) -> float | None:
-  # Code to value a derivative
-  if style == 'european':
-    if method == 'bsm':
-      return black_scholes(spot, strike, expiry, rate, vol, payoff)
-    elif method == 'mc':
-      return monte_carlo(payoff, expiry, strike, spot, rate, vol, reps, seed)
-  if style == 'american':
-    if method == 'mc':
-      return monte_carlo(payoff, expiry, strike, spot, rate, vol, reps, seed)
-
-
-
-
-
+def black_scholes_vega(S_0: float, K: float, T: datetime, t: datetime, r: float, sigma: float) -> float:
+  tau = (T - t).days / 365.0
+  d1 = (math.log(S_0 / K) + (r + 0.5 * sigma ** 2) * tau) / (sigma * math.sqrt(tau))
+  return S_0 * norm_cdf(d1) * math.sqrt(tau)
