@@ -2,6 +2,7 @@ from derivative_valuation import *
 from datetime import datetime, timedelta
 import yfinance as yf
 from tabulate import tabulate
+import pandas as pd
 
 
 def get_risk_free_rate() -> float:
@@ -12,7 +13,8 @@ def get_risk_free_rate() -> float:
 
 def get_stock_data(ticker: str) -> tuple[float, float]:
   # Get the stock data
-  stock_data: float = yf.download(ticker,progress=False,)['Adj Close']
+  stock_data: pd.Series = yf.download(ticker,progress=False,)['Adj Close']
+  assert isinstance(stock_data, pd.Series), "stock_data should be a pandas Series"
   returns = stock_data.pct_change()
   meanReturns = returns.mean()
   sigma = returns.std() # Todo
@@ -95,4 +97,5 @@ print(
   )
 )
 
-# 3. Estimate the value of a European call option using the Binomial Tree method
+# 4. Estimate the value of a European call option using the Binomial Tree method
+# call_bt = binomial_tree('call', S_0, K, T, t, r, sigma)
